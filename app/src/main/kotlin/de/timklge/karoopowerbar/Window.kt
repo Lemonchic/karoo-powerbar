@@ -334,8 +334,8 @@ class Window(
         val label: String?,
     )
 
-    private fun getRouteProgress(userProfile: UserProfile, riddenDistance: Double?, routeEndAt: Double?, distanceToDestination: Double?): BarProgress {
-        val routeProgress = if (routeEndAt != null && riddenDistance != null) remap(riddenDistance, 0.0, routeEndAt, 0.0, 1.0) else null
+    private fun getRouteProgress(userProfile: UserProfile, riddenDistance: Double?, distanceToDestination: Double?): BarProgress {
+        val routeProgress = if (distanceToDestination != null && riddenDistance != null) remap(riddenDistance, 0.0, riddenDistance + distanceToDestination, 0.0, 1.0) else null
         val routeProgressInUserUnit = when (userProfile.preferredUnit.distance) {
             UserProfile.PreferredUnit.UnitType.IMPERIAL -> riddenDistance?.times(0.000621371)?.roundToInt() // Miles
             else -> riddenDistance?.times(0.001)?.roundToInt() // Kilometers
@@ -344,8 +344,8 @@ class Window(
         return BarProgress(routeProgress, routeProgressInUserUnit?.toString())
     }
 
-    private fun getRemainingRouteProgress(userProfile: UserProfile, riddenDistance: Double?, routeEndAt: Double?, distanceToDestination: Double?): BarProgress {
-        val routeProgress = if (routeEndAt != null && riddenDistance != null) remap(riddenDistance, 0.0, routeEndAt, 0.0, 1.0) else null
+    private fun getRemainingRouteProgress(userProfile: UserProfile, riddenDistance: Double?, distanceToDestination: Double?): BarProgress {
+        val routeProgress = if (distanceToDestination != null && riddenDistance != null) remap(riddenDistance, 0.0, riddenDistance + distanceToDestination, 0.0, 1.0) else null
         val distanceToDestinationInUserUnit = when (userProfile.preferredUnit.distance) {
             UserProfile.PreferredUnit.UnitType.IMPERIAL -> distanceToDestination?.times(0.000621371)?.roundToInt() // Miles
             else -> distanceToDestination?.times(0.001)?.roundToInt() // Kilometers
@@ -356,7 +356,7 @@ class Window(
 
     private suspend fun streamRouteProgress(
         source: SelectedSource,
-        routeProgressProvider: (UserProfile, Double?, Double?, Double?) -> BarProgress
+        routeProgressProvider: (userProfile: UserProfile, riddenDistance: Double?, distanceToDestination: Double?) -> BarProgress
     ) {
         data class StreamData(
             val userProfile: UserProfile,
@@ -366,7 +366,6 @@ class Window(
         )
 
         var lastKnownRoutePolyline: String? = null
-        var lastKnownRouteLength: Double? = null
 
         combine(karooSystem.streamUserProfile(), karooSystem.streamDataFlow(DataType.Type.DISTANCE_TO_DESTINATION), karooSystem.streamNavigationState(), karooSystem.streamDataFlow(DataType.Type.DISTANCE)) { userProfile, distanceToDestination, navigationState, riddenDistance ->
             StreamData(
@@ -385,20 +384,9 @@ class Window(
 
             if (routePolyline != lastKnownRoutePolyline) {
                 lastKnownRoutePolyline = routePolyline
-                lastKnownRouteLength = when (state){
-                    is OnNavigationState.NavigationState.NavigatingRoute -> state.routeDistance
-                    is OnNavigationState.NavigationState.NavigatingToDestination -> try {
-                        TurfMeasurement.length(LineString.fromPolyline(state.polyline, 5), UNIT_METERS)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to calculate route length", e)
-                        null
-                    }
-                    else -> null
-                }
             }
 
-            val routeEndAt = lastKnownRouteLength?.plus((distanceToDestination ?: 0.0))
-            val barProgress = routeProgressProvider(userProfile, riddenDistance, routeEndAt, distanceToDestination)
+            val barProgress = routeProgressProvider(userProfile, riddenDistance, distanceToDestination)
 
             val powerbarsWithRouteProgressSource = powerbars.values.filter { it.source == source }
 
