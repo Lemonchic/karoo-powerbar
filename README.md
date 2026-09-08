@@ -22,7 +22,7 @@ to be displayed at the bottom or at the top of the screen:
 
 - Power
 - Heart Rate
-- Power (Instant, 3s, 10s)
+- Power (Instant, 3s, 10s, 30s)
 - Speed
 - Cadence
 - Grade
@@ -33,6 +33,17 @@ to be displayed at the bottom or at the top of the screen:
 - Gears
 - Flight Attendant Fork / Rear Shock Position
 - Flight Attendant Mode
+
+### Fork Features & Enhancements
+
+- **30s Average Power with Dynamic Delta Arrow (`POWER_30S`)**:
+  - Displays 30-second average power alongside an interactive delta arrow comparing 5s vs 30s power output.
+  - **Dynamic Direction & Proportional Scaling:** Points forward (`->`) on surges and backward (`<-`) on drops, scaled with a smooth non-linear power curve that highlights low-percentage deltas without clipping high surges.
+  - **High-Contrast 3px Black & White Outline:** Outlined with a bold white stroke framed by 3px black borders on both edges for maximum legibility in direct sunlight and against bright backgrounds.
+  - **Continuous Zone Color Shading:** The arrow fill color smoothly interpolates across intermediate shades (e.g., lime, amber, vermilion) while preserving exact zone colors at zone midpoints.
+  - **Intelligent Screen-Edge Wrap:** When 30s power approaches the right edge of the screen, positive surge arrows automatically wrap to start from the left edge of the screen, pointing across the bar.
+- **Split Bar Sizing**: Configure top and bottom progress bars with independent thickness and bar sizes.
+- **Extra Large Bar Size (`50dp`)**: Added an Extra Large bar size option with enlarged value boxes and typography for at-a-glance visibility.
 
 Subsequently, the bar(s) will be shown when riding. Bars are filled and colored according
 to your current power output / heart rate zone as setup in your Karoo settings. Optionally, the actual data value can be displayed on top of the bar.

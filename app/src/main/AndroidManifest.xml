@@ -22,15 +22,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ShowcaseActivity"
-            android:exported="true"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
 
         <service
             android:name=".ForegroundService"
