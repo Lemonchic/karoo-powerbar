@@ -32,7 +32,7 @@ enum class CustomProgressBarBarSize(val id: String, val labelResId: Int, val bar
     SMALL("small", R.string.size_small, 10f),
     MEDIUM("medium", R.string.size_medium, 15f),
     LARGE("large", R.string.size_large, 25f),
-    EXTRA_LARGE("extra_large", R.string.size_extra_large, 35f);
+    EXTRA_LARGE("extra_large", R.string.size_extra_large, 50f);
 
     companion object {
         fun fromSize(size: CustomProgressBarSize): CustomProgressBarBarSize {

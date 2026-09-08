@@ -321,6 +321,10 @@ class CustomProgressBar(private val view: CustomView,
                     }
 
                     if (showLabel){
+                        textPaint.textSize = if (barSize == CustomProgressBarBarSize.EXTRA_LARGE) (fontSize.fontSize * 1.25f) else fontSize.fontSize
+                        val hPadding = if (barSize == CustomProgressBarBarSize.EXTRA_LARGE) 36f else 20f
+                        val vPadding = if (barSize == CustomProgressBarBarSize.EXTRA_LARGE) 6f else 0f
+
                         lineStrokePaint.color = if (target != null){
                             if (isTargetMet) Color.GREEN else Color.RED
                         } else progressColor
@@ -329,7 +333,7 @@ class CustomProgressBar(private val view: CustomView,
                         blurPaintHighlight.color = ColorUtils.blendARGB(lineStrokePaint.color, 0xFFFFFF, 0.5f)
 
                         val textBounds = textPaint.measureText(label)
-                        val xOffset = (textBounds + 20).coerceAtLeast(10f) / 2f
+                        val xOffset = (textBounds + hPadding).coerceAtLeast(10f) / 2f
 
                         // Calculate label position based on draw mode
                         val x = if (stickToEdge) {
@@ -384,26 +388,25 @@ class CustomProgressBar(private val view: CustomView,
                         if (stickToEdge) {
                             // Pin the value box to the top edge of the screen
                             finalTextBoxTop = 2f
-                            finalTextBaselineY = finalTextBoxTop - fm.ascent
-                            finalTextBoxBottom = finalTextBaselineY + fm.descent
+                            finalTextBaselineY = finalTextBoxTop - fm.ascent + vPadding
+                            finalTextBoxBottom = finalTextBaselineY + fm.descent + vPadding
                         } else {
                             // barCenterY calculation uses barSize.barHeight, which is 0f for NONE,
                             // correctly centering the label on the 15f line.
                             val barCenterY = rect.top + barSize.barHeight / 2f
-                            val centeredTextBaselineY = barCenterY - (fm.ascent + fm.descent) / 2f
-                            val calculatedTextBoxTop = centeredTextBaselineY + fm.ascent
-                            finalTextBoxTop = calculatedTextBoxTop.coerceAtLeast(0f)
-                            finalTextBaselineY = finalTextBoxTop - fm.ascent
-                            finalTextBoxBottom = finalTextBaselineY + fm.descent
+                            finalTextBaselineY = barCenterY - (fm.ascent + fm.descent) / 2f
+                            finalTextBoxTop = (finalTextBaselineY + fm.ascent - vPadding).coerceAtLeast(0f)
+                            finalTextBoxBottom = (finalTextBaselineY + fm.descent + vPadding).coerceAtMost(canvas.height.toFloat())
                         }
 
                         if (source == SelectedSource.POWER_30S && powerDelta != null) {
                             drawDeltaArrow(canvas, x, r, finalTextBoxTop, finalTextBoxBottom, backgroundLeft, backgroundRight)
                         }
 
-                        canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 2f, 2f, textBackgroundPaint)
-                        canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 2f, 2f, blurPaint)
-                        canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 2f, 2f, lineStrokePaint)
+                        canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 3f, 3f, backgroundPaint)
+                        canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 3f, 3f, textBackgroundPaint)
+                        canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 3f, 3f, blurPaint)
+                        canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 3f, 3f, lineStrokePaint)
                         canvas.drawText(label.uppercase(), x + xOffset, finalTextBaselineY, textPaint)
                         }
                     }
@@ -462,6 +465,10 @@ class CustomProgressBar(private val view: CustomView,
                     }
 
                     if (showLabel){
+                        textPaint.textSize = if (barSize == CustomProgressBarBarSize.EXTRA_LARGE) (fontSize.fontSize * 1.25f) else fontSize.fontSize
+                        val hPadding = if (barSize == CustomProgressBarBarSize.EXTRA_LARGE) 36f else 20f
+                        val vPadding = if (barSize == CustomProgressBarBarSize.EXTRA_LARGE) 6f else 0f
+
                         lineStrokePaint.color = if (target != null){
                             if (isTargetMet) Color.GREEN else Color.RED
                         } else progressColor
@@ -470,7 +477,7 @@ class CustomProgressBar(private val view: CustomView,
                         blurPaintHighlight.color = ColorUtils.blendARGB(lineStrokePaint.color, 0xFFFFFF, 0.5f)
 
                         val textBounds = textPaint.measureText(label)
-                        val xOffset = (textBounds + 20).coerceAtLeast(10f) / 2f
+                        val xOffset = (textBounds + hPadding).coerceAtLeast(10f) / 2f
 
                         // Calculate label position based on draw mode
                         val x = if (stickToEdge) {
@@ -518,30 +525,30 @@ class CustomProgressBar(private val view: CustomView,
                         }
                         val r = x + xOffset * 2
 
+                        val fm = textPaint.fontMetrics
                         val textDrawBaselineY: Float
                         val yBox: Float
                         val bBox: Float
                         if (stickToEdge) {
                             // Pin the value box to the bottom edge of the screen
                             bBox = canvas.height.toFloat() - 2f
-                            textDrawBaselineY = bBox - textPaint.descent()
-                            yBox = textDrawBaselineY + textPaint.ascent()
+                            textDrawBaselineY = bBox - fm.descent - vPadding
+                            yBox = (textDrawBaselineY + fm.ascent - vPadding).coerceAtLeast(0f)
                         } else {
-                            // textDrawBaselineY calculation uses rect.top and barSize.barHeight.
-                            // If NONE, barSize.barHeight is 0f. rect.top becomes canvas.height - 1f.
-                            // So, baseline is (canvas.height - 1f) + 0f - 1f = canvas.height - 2f.
-                            textDrawBaselineY = rect.top + barSize.barHeight - 1f
-                            yBox = textDrawBaselineY + textPaint.ascent()
-                            bBox = textDrawBaselineY + textPaint.descent()
+                            val boxH = (-fm.ascent + fm.descent) + 2f * vPadding
+                            bBox = (canvas.height.toFloat() - 2f).coerceAtMost(canvas.height.toFloat())
+                            yBox = (bBox - boxH).coerceAtLeast(0f)
+                            textDrawBaselineY = bBox - vPadding - fm.descent
                         }
 
                         if (source == SelectedSource.POWER_30S && powerDelta != null) {
                             drawDeltaArrow(canvas, x, r, yBox, bBox, backgroundLeft, backgroundRight)
                         }
 
-                        canvas.drawRoundRect(x, yBox, r, bBox, 2f, 2f, textBackgroundPaint)
-                        canvas.drawRoundRect(x, yBox, r, bBox, 2f, 2f, blurPaint)
-                        canvas.drawRoundRect(x, yBox, r, bBox, 2f, 2f, lineStrokePaint)
+                        canvas.drawRoundRect(x, yBox, r, bBox, 3f, 3f, backgroundPaint)
+                        canvas.drawRoundRect(x, yBox, r, bBox, 3f, 3f, textBackgroundPaint)
+                        canvas.drawRoundRect(x, yBox, r, bBox, 3f, 3f, blurPaint)
+                        canvas.drawRoundRect(x, yBox, r, bBox, 3f, 3f, lineStrokePaint)
                         canvas.drawText(label.uppercase(), x + xOffset, textDrawBaselineY, textPaint)
                     }
                 }
@@ -560,84 +567,92 @@ class CustomProgressBar(private val view: CustomView,
     ) {
         val delta = powerDelta ?: return
         val absDelta = delta.absoluteValue
-        if (absDelta < 2.0 && (powerDeltaPercent?.absoluteValue ?: 0.0) < 0.02) return // Deadband to prevent twitching around 0 delta
+        if (absDelta < 0.5 && (powerDeltaPercent?.absoluteValue ?: 0.0) < 0.005) return // No arrow at 0 delta
 
-        // Direction:
-        // When power is surging (delta > 0), arrow points in the direction the bar advances.
-        // For standard left-to-right bar (FULL or LEFT): right is advancing.
-        // For RIGHT horizontal location (right-to-left): left is advancing.
         val pointsForward = delta > 0
         val pointsRight = when (horizontalLocation) {
             HorizontalPowerbarLocation.RIGHT -> !pointsForward
             else -> pointsForward
         }
 
-        // Dynamic Length & Size scaling:
-        // Use powerDeltaPercent if available, otherwise normalize absDelta from 2W to 50W+
+        // Relative delta ratio:
         val ratio = powerDeltaPercent?.let { it.absoluteValue.coerceIn(0.0, 1.0).toFloat() }
-            ?: ((absDelta - 2.0) / 48.0).coerceIn(0.0, 1.0).toFloat()
+            ?: (absDelta / 250.0).coerceIn(0.0, 1.0).toFloat()
 
         // Sizing for XL and other bar sizes:
-        val headHeight = (barSize.barHeight * 1.6f).coerceIn(32f, 60f)
-        val shaftHeight = (headHeight * 0.50f).coerceIn(15f, 30f)
-        val headWidth = (headHeight * 0.80f).coerceIn(24f, 48f)
+        val fullHeadHeight = (barSize.barHeight * 1.35f).coerceIn(32f, 66f)
+        val shaftHeight = (fullHeadHeight * 0.46f).coerceIn(15f, 30f)
+        val fullHeadWidth = (fullHeadHeight * 0.72f).coerceIn(24f, 48f)
 
-        // Arrow length extends prominently from the value box (twice bigger for 50% delta):
-        val baseLength = headWidth + 25f
-        val maxExtra = 210f
-        val desiredLength = baseLength + ratio * maxExtra
+        // Continuous length starting from 0 (scale increased by 50%: at 50% delta: 255px, at 1% delta: ~5.1px):
+        val arrowLength = ratio * 510f
+        if (arrowLength < 1.0f) return
 
         // Arrow color uses the same colour scheme as 30s square relatively to its power:
         val arrowColor = powerDeltaColor ?: progressColor
         arrowPaint.color = arrowColor
 
         val centerY = (boxTop + boxBottom) / 2f
-        val anchorX = if (pointsRight) boxRight - 1f else boxLeft + 1f
+        val anchorX = if (pointsRight) boxRight else boxLeft
 
         // Constrain tip safely within screen bounds without throwing empty range exceptions:
-        val tipX = if (pointsRight) {
-            val maxAllowed = backgroundRight - 2f
-            val minNeeded = anchorX + 4f
-            if (minNeeded >= maxAllowed) return
-            (anchorX + desiredLength).coerceIn(minNeeded, maxAllowed)
+        val tipX: Float
+        val actualLen: Float
+        if (pointsRight) {
+            val maxRight = backgroundRight - 2f
+            if (anchorX >= maxRight - 1.5f) return
+            tipX = (anchorX + arrowLength).coerceAtMost(maxRight)
+            actualLen = tipX - anchorX
         } else {
-            val minAllowed = backgroundLeft + 2f
-            val maxNeeded = anchorX - 4f
-            if (minAllowed >= maxNeeded) return
-            (anchorX - desiredLength).coerceIn(minAllowed, maxNeeded)
+            val minLeft = backgroundLeft + 2f
+            if (anchorX <= minLeft + 1.5f) return
+            tipX = (anchorX - arrowLength).coerceAtLeast(minLeft)
+            actualLen = anchorX - tipX
         }
 
-        val actualLen = (tipX - anchorX).absoluteValue
-        if (actualLen < 8f) return
+        if (actualLen < 1.0f) return
 
-        val effectiveHeadWidth = headWidth.coerceAtMost(actualLen * 0.65f)
         val sHalf = shaftHeight / 2f
-        val hHalf = headHeight / 2f
+        val hHalf = fullHeadHeight / 2f
         val path = Path()
 
-        if (pointsRight) {
-            val neckX = (tipX - effectiveHeadWidth).coerceAtLeast(anchorX + 2f)
-            path.moveTo(anchorX, centerY - sHalf)
-            path.lineTo(neckX, centerY - sHalf)
-            path.lineTo(neckX, centerY - hHalf)
+        // Tuck base 6px inside the 30s square so it emerges seamlessly from behind it:
+        val tuck = 6f
+        val baseStartX = if (pointsRight) anchorX - tuck else anchorX + tuck
+
+        if (actualLen < fullHeadWidth) {
+            // Emerging arrowhead: only a triangle peeking out from behind the 30s square
+            val currentH = hHalf * (actualLen / fullHeadWidth)
+            path.moveTo(baseStartX, centerY - currentH)
             path.lineTo(tipX, centerY)
-            path.lineTo(neckX, centerY + hHalf)
-            path.lineTo(neckX, centerY + sHalf)
-            path.lineTo(anchorX, centerY + sHalf)
+            path.lineTo(baseStartX, centerY + currentH)
             path.close()
         } else {
-            val neckX = (tipX + effectiveHeadWidth).coerceAtMost(anchorX - 2f)
-            path.moveTo(anchorX, centerY - sHalf)
-            path.lineTo(neckX, centerY - sHalf)
-            path.lineTo(neckX, centerY - hHalf)
-            path.lineTo(tipX, centerY)
-            path.lineTo(neckX, centerY + hHalf)
-            path.lineTo(neckX, centerY + sHalf)
-            path.lineTo(anchorX, centerY + sHalf)
-            path.close()
+            // Full arrowhead emerged, shaft connects baseStartX to neckX
+            if (pointsRight) {
+                val neckX = tipX - fullHeadWidth
+                path.moveTo(baseStartX, centerY - sHalf)
+                path.lineTo(neckX, centerY - sHalf)
+                path.lineTo(neckX, centerY - hHalf)
+                path.lineTo(tipX, centerY)
+                path.lineTo(neckX, centerY + hHalf)
+                path.lineTo(neckX, centerY + sHalf)
+                path.lineTo(baseStartX, centerY + sHalf)
+                path.close()
+            } else {
+                val neckX = tipX + fullHeadWidth
+                path.moveTo(baseStartX, centerY - sHalf)
+                path.lineTo(neckX, centerY - sHalf)
+                path.lineTo(neckX, centerY - hHalf)
+                path.lineTo(tipX, centerY)
+                path.lineTo(neckX, centerY + hHalf)
+                path.lineTo(neckX, centerY + sHalf)
+                path.lineTo(baseStartX, centerY + sHalf)
+                path.close()
+            }
         }
 
-        // Layer 1: Solid arrow filled with default power color scheme
+        // Layer 1: Solid arrow filled with power color
         canvas.drawPath(path, arrowPaint)
         // Layer 2: Clean outline matching the value box border
         canvas.drawPath(path, arrowStrokePaint)
