@@ -1,5 +1,8 @@
 package de.timklge.karoopowerbar
 
+import android.content.Context
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import io.hammerhead.karooext.models.UserProfile
 
 enum class Zone(val colorResource: Int){
@@ -36,6 +39,33 @@ fun getZone(userZones: List<UserProfile.Zone>, value: Int): Zone? {
     }
 
     return null
+}
+
+fun getShadedArrowColor(context: Context, userZones: List<UserProfile.Zone>, watts: Int): Int {
+    if (userZones.isEmpty()) return ContextCompat.getColor(context, R.color.zone1)
+
+    val zoneList = zones[userZones.size] ?: zones[7] ?: return ContextCompat.getColor(context, R.color.zone1)
+    val colors = zoneList.map { ContextCompat.getColor(context, it.colorResource) }
+
+    // Calculate center power for each zone:
+    val midpoints = userZones.map { zone ->
+        val effectiveMax = if (zone.max > 1500) (zone.min * 1.3).toInt() else zone.max
+        (zone.min + effectiveMax) / 2.0
+    }
+
+    if (watts <= midpoints.first()) return colors.first()
+    if (watts >= midpoints.last()) return colors.last()
+
+    for (i in 0 until midpoints.size - 1) {
+        val m1 = midpoints[i]
+        val m2 = midpoints[i + 1]
+        if (watts.toDouble() in m1..m2) {
+            val fraction = if (m2 > m1) ((watts - m1) / (m2 - m1)).coerceIn(0.0, 1.0).toFloat() else 0f
+            return ColorUtils.blendARGB(colors[i], colors[i + 1], fraction)
+        }
+    }
+
+    return colors.last()
 }
 
 val zoneList = listOf(Zone.Zone0, Zone.Zone1, Zone.Zone2, Zone.Zone3, Zone.Zone4, Zone.Zone5, Zone.Zone6, Zone.Zone7, Zone.Zone8)

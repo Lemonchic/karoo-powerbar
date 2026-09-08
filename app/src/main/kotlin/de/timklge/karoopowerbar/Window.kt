@@ -833,7 +833,7 @@ class Window(
             } else null
             val power5sColor = if (source == SelectedSource.POWER_30S && streamData.power5s != null) {
                 val p5s = streamData.power5s.roundToInt()
-                context.getColor(getZone(streamData.userProfile.powerZones, p5s)?.colorResource ?: R.color.zone1)
+                getShadedArrowColor(context, streamData.userProfile.powerZones, p5s)
             } else null
 
             powerbarsWithPowerSource.forEach { powerbar ->

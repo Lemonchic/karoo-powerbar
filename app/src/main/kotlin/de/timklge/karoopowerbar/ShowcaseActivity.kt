@@ -1,4 +1,4 @@
-﻿package de.timklge.karoopowerbar
+package de.timklge.karoopowerbar
 
 import android.os.Bundle
 import android.widget.Button
@@ -86,7 +86,7 @@ class ShowcaseActivity : ComponentActivity() {
             // Original scaling:
             val progress = remap(p30s.toDouble(), minPower, maxPower, 0.0, 1.0)
             val color30s = getPowerColor(p30s)
-            val color5s = getPowerColor(p5s)
+            val color5s = getShadedArrowColor(this, userZones, p5s)
 
             powerbar.label = "${p30s}W"
             powerbar.progress = progress

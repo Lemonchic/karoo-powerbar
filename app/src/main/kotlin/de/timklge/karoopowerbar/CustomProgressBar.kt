@@ -595,12 +595,28 @@ class CustomProgressBar(private val view: CustomView,
         arrowPaint.color = arrowColor
 
         val centerY = (boxTop + boxBottom) / 2f
-        val anchorX = if (pointsRight) boxRight else boxLeft
+
+        // Threshold for right screen edge wrap: @420W for 340W FTP scale (~0.776 progress) or within 45px of right edge:
+        val thresholdProgress = 420.0 / 541.0
+        val isNearRightEdge = (progress ?: 0.0) >= thresholdProgress || (boxRight >= backgroundRight - 45f)
+        val wrapToLeftEdge = pointsRight && isNearRightEdge
+
+        val anchorX = if (wrapToLeftEdge) {
+            backgroundLeft
+        } else if (pointsRight) {
+            boxRight
+        } else {
+            boxLeft
+        }
 
         // Constrain tip safely within screen bounds without throwing empty range exceptions:
         val tipX: Float
         val actualLen: Float
-        if (pointsRight) {
+        if (wrapToLeftEdge) {
+            val maxAllowed = (boxLeft - 10f).coerceAtMost(backgroundRight - 4f)
+            tipX = (anchorX + arrowLength).coerceAtMost(maxAllowed)
+            actualLen = tipX - anchorX
+        } else if (pointsRight) {
             val maxRight = backgroundRight - 4f
             if (anchorX >= maxRight - 1.5f) return
             tipX = (anchorX + arrowLength).coerceAtMost(maxRight)
