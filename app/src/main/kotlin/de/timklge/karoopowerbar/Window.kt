@@ -828,9 +828,18 @@ class Window(
             val delta = if (source == SelectedSource.POWER_30S && streamData.value != null && streamData.power5s != null) {
                 streamData.power5s - streamData.value
             } else null
+            val deltaPercent = if (source == SelectedSource.POWER_30S && streamData.value != null && streamData.power5s != null && streamData.value > 0) {
+                (streamData.power5s - streamData.value) / streamData.value
+            } else null
+            val power5sColor = if (source == SelectedSource.POWER_30S && streamData.power5s != null) {
+                val p5s = streamData.power5s.roundToInt()
+                context.getColor(getZone(streamData.userProfile.powerZones, p5s)?.colorResource ?: R.color.zone1)
+            } else null
 
             powerbarsWithPowerSource.forEach { powerbar ->
                 powerbar.powerDelta = delta
+                powerbar.powerDeltaPercent = deltaPercent
+                powerbar.powerDeltaColor = power5sColor
                 if (value != null) {
                     val customMinPower = if (streamData.settings?.useCustomPowerRange == true) streamData.settings.minPower else null
                     val customMaxPower = if (streamData.settings?.useCustomPowerRange == true) streamData.settings.maxPower else null

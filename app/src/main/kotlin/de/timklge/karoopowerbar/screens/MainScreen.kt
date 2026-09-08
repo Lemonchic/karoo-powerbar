@@ -2,6 +2,7 @@ package de.timklge.karoopowerbar.screens
 
 import android.content.Intent
 import android.provider.Settings
+import de.timklge.karoopowerbar.ShowcaseActivity
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -776,6 +777,17 @@ fun MainScreen(onFinish: () -> Unit) {
                     })
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(stringResource(R.string.only_show_while_riding))
+                }
+
+                FilledTonalButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    onClick = {
+                        ctx.startActivity(Intent(ctx, ShowcaseActivity::class.java))
+                    }
+                ) {
+                    Text("Showcase Arrow (-50% Delta)")
                 }
 
                 Spacer(modifier = Modifier.padding(30.dp))

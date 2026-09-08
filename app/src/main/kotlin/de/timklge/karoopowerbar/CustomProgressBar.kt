@@ -21,14 +21,18 @@ class CustomView @JvmOverloads constructor(
 ) : View(context, attrs) {
     var progressBars: Map<HorizontalPowerbarLocation, CustomProgressBar>? = null
 
-    override fun onDrawForeground(canvas: Canvas) {
-        super.onDrawForeground(canvas)
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
 
         // Draw all progress bars
         progressBars?.values?.forEach { progressBar ->
             Log.d(KarooPowerbarExtension.TAG, "Drawing progress bar for source: ${progressBar.source} - location: ${progressBar.location} - horizontalLocation: ${progressBar.horizontalLocation}")
             progressBar.onDrawForeground(canvas)
         }
+    }
+
+    override fun onDrawForeground(canvas: Canvas) {
+        super.onDrawForeground(canvas)
     }
 }
 
@@ -51,6 +55,8 @@ class CustomProgressBar(private val view: CustomView,
     @ColorInt var progressColor: Int = 0xFF2b86e6.toInt()
     var drawMode: ProgressBarDrawMode = ProgressBarDrawMode.STANDARD
     var powerDelta: Double? = null
+    var powerDeltaPercent: Double? = null
+    @ColorInt var powerDeltaColor: Int? = null
 
     var fontSize = CustomProgressBarFontSize.MEDIUM
         set(value) {
@@ -82,27 +88,13 @@ class CustomProgressBar(private val view: CustomView,
         style = Paint.Style.FILL
     }
 
-    private val arrowBlurPaint = Paint().apply {
-        isAntiAlias = true
-        style = Paint.Style.FILL
-        maskFilter = BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL)
-    }
-
     private val arrowStrokePaint = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.STROKE
-        strokeWidth = 3.5f
+        strokeWidth = 2.5f
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
         color = Color.BLACK
-    }
-
-    private val arrowCorePaint = Paint().apply {
-        isAntiAlias = true
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-        strokeWidth = 3f
-        color = Color.argb(220, 255, 255, 255)
     }
 
     private val targetColor = 0xFF9933FF.toInt()
@@ -568,7 +560,7 @@ class CustomProgressBar(private val view: CustomView,
     ) {
         val delta = powerDelta ?: return
         val absDelta = delta.absoluteValue
-        if (absDelta < 2.0) return // Deadband to prevent twitching around 0 delta
+        if (absDelta < 2.0 && (powerDeltaPercent?.absoluteValue ?: 0.0) < 0.02) return // Deadband to prevent twitching around 0 delta
 
         // Direction:
         // When power is surging (delta > 0), arrow points in the direction the bar advances.
@@ -581,30 +573,36 @@ class CustomProgressBar(private val view: CustomView,
         }
 
         // Dynamic Length & Size scaling:
-        // absDelta ranges from 2W to 50W+
-        val ratio = ((absDelta - 2.0) / 48.0).coerceIn(0.0, 1.0).toFloat()
+        // Use powerDeltaPercent if available, otherwise normalize absDelta from 2W to 50W+
+        val ratio = powerDeltaPercent?.let { it.absoluteValue.coerceIn(0.0, 1.0).toFloat() }
+            ?: ((absDelta - 2.0) / 48.0).coerceIn(0.0, 1.0).toFloat()
 
-        // Generous vertical sizing for high visibility on bike computer:
-        val headHeight = (barSize.barHeight * 1.5f).coerceIn(28f, 56f)
-        val shaftHeight = (headHeight * 0.48f).coerceIn(12f, 26f)
-        val headWidth = (headHeight * 0.75f).coerceIn(20f, 40f)
+        // Sizing for XL and other bar sizes:
+        val headHeight = (barSize.barHeight * 1.6f).coerceIn(32f, 60f)
+        val shaftHeight = (headHeight * 0.50f).coerceIn(15f, 30f)
+        val headWidth = (headHeight * 0.80f).coerceIn(24f, 48f)
 
-        // Arrow length extends prominently from the value box:
-        val baseLength = headWidth + 18f
-        val maxExtra = 65f
+        // Arrow length extends prominently from the value box (twice bigger for 50% delta):
+        val baseLength = headWidth + 25f
+        val maxExtra = 210f
         val desiredLength = baseLength + ratio * maxExtra
 
-        // High-contrast, high-visibility neon colors:
-        // Surging (delta > 0): neon lime #76FF03 -> brilliant electric spring green #00FF66
-        // Dropping (delta < 0): vivid flame orange #FF6D00 -> intense neon red/crimson #FF0055
-        val arrowColor = if (delta > 0) {
-            ColorUtils.blendARGB(0xFF76FF03.toInt(), 0xFF00FF66.toInt(), ratio)
-        } else {
-            ColorUtils.blendARGB(0xFFFF6D00.toInt(), 0xFFFF0055.toInt(), ratio)
+        // Default Power Colour Scheme:
+        // Uses the power zone color of the 5s power, or maps the delta percentage to default power zones:
+        val arrowColor = powerDeltaColor ?: run {
+            val pct = powerDeltaPercent ?: (delta / 250.0)
+            when {
+                pct <= -0.40 -> 0xFF00B988.toInt() // Zone 1 (Active Recovery) - Default Power Green
+                pct <= -0.20 -> 0xFF60EEB2.toInt() // Zone 2 (Endurance) - Default Power Light Green
+                pct <= -0.05 -> 0xFFFFF500.toInt() // Zone 3 (Tempo) - Default Power Yellow
+                pct <= 0.10  -> 0xFFFDC84C.toInt() // Zone 4 (Threshold) - Default Power Amber
+                pct <= 0.25  -> 0xFFFB8C65.toInt() // Zone 5 (VO2 Max) - Default Power Light Orange
+                pct <= 0.45  -> 0xFFFE581F.toInt() // Zone 6 (Anaerobic) - Default Power Orange/Red
+                else         -> 0xFFD60404.toInt() // Zone 7 (Neuromuscular) - Default Power Red
+            }
         }
 
         arrowPaint.color = arrowColor
-        arrowBlurPaint.color = arrowColor
 
         val centerY = (boxTop + boxBottom) / 2f
         val anchorX = if (pointsRight) boxRight - 1f else boxLeft + 1f
@@ -645,15 +643,10 @@ class CustomProgressBar(private val view: CustomView,
             path.close()
         }
 
-        // Layer 1: Ambient neon glow
-        canvas.drawPath(path, arrowBlurPaint)
-        // Layer 2: Vivid neon solid fill
+        // Layer 1: Solid arrow filled with default power color scheme
         canvas.drawPath(path, arrowPaint)
-        // Layer 3: Bold dark outline for maximum contrast against all backgrounds
+        // Layer 2: Clean outline matching the value box border
         canvas.drawPath(path, arrowStrokePaint)
-        // Layer 4: Bright luminous core line for instant daylight visibility
-        val coreEndX = if (pointsRight) tipX - 6f else tipX + 6f
-        canvas.drawLine(anchorX, centerY, coreEndX, centerY, arrowCorePaint)
     }
 
     fun invalidate() {
