@@ -15,6 +15,7 @@ import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
 import de.timklge.karoopowerbar.datatypes.SelectedSource
 import kotlin.math.absoluteValue
+import kotlin.math.pow
 
 class CustomView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -584,8 +585,9 @@ class CustomProgressBar(private val view: CustomView,
         val shaftHeight = (fullHeadHeight * 0.46f).coerceIn(15f, 30f)
         val fullHeadWidth = (fullHeadHeight * 0.72f).coerceIn(24f, 48f)
 
-        // Continuous length starting from 0 (scale increased by 50%: at 50% delta: 255px, at 1% delta: ~5.1px):
-        val arrowLength = ratio * 510f
+        // Non-linear scale: slightly bigger at low deltas, slightly smaller at high deltas:
+        val scaledRatio = ratio.toDouble().pow(0.78).toFloat()
+        val arrowLength = scaledRatio * 400f
         if (arrowLength < 1.0f) return
 
         // Arrow color uses the same colour scheme as 30s square relatively to its power:
