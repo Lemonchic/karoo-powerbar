@@ -98,6 +98,15 @@ class CustomProgressBar(private val view: CustomView,
         color = Color.WHITE
     }
 
+    private val arrowBlackStrokePaint = Paint().apply {
+        isAntiAlias = true
+        style = Paint.Style.STROKE
+        strokeWidth = 6.5f
+        strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
+        color = Color.BLACK
+    }
+
     private val targetColor = 0xFF9933FF.toInt()
 
     private val targetZoneFillPaint = Paint().apply {
@@ -596,9 +605,9 @@ class CustomProgressBar(private val view: CustomView,
 
         val centerY = (boxTop + boxBottom) / 2f
 
-        // Threshold for right screen edge wrap: @420W for 340W FTP scale (~0.776 progress) or within 45px of right edge:
-        val thresholdProgress = 420.0 / 541.0
-        val isNearRightEdge = (progress ?: 0.0) >= thresholdProgress || (boxRight >= backgroundRight - 45f)
+        // Threshold for right screen edge wrap: @360W for 340W FTP scale (~0.665 progress) or within 85px of right edge:
+        val thresholdProgress = 360.0 / 541.0
+        val isNearRightEdge = (progress ?: 0.0) >= thresholdProgress || (boxRight >= backgroundRight - 85f)
         val wrapToLeftEdge = pointsRight && isNearRightEdge
 
         val anchorX = if (wrapToLeftEdge) {
@@ -672,7 +681,9 @@ class CustomProgressBar(private val view: CustomView,
 
         // Layer 1: Solid arrow filled with power color
         canvas.drawPath(path, arrowPaint)
-        // Layer 2: Clean outline matching the value box border
+        // Layer 2: 1px black thin outlines framing the white outline on both edges
+        canvas.drawPath(path, arrowBlackStrokePaint)
+        // Layer 3: Bold white outline
         canvas.drawPath(path, arrowStrokePaint)
     }
 

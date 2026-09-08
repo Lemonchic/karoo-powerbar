@@ -155,7 +155,11 @@ class ShowcaseActivity : ComponentActivity() {
             sb5s.progress = 170
         }
 
-        // Initial setup: 250W with 125W (-50% delta)
-        updateDisplay(250, 125)
+        // Initial setup (supports intent extras --ei p30s <W> --ei p5s <W>):
+        val initP30s = intent.getIntExtra("p30s", 250)
+        val initP5s = intent.getIntExtra("p5s", 125)
+        sb30s.progress = initP30s
+        sb5s.progress = initP5s
+        updateDisplay(initP30s, initP5s)
     }
 }
