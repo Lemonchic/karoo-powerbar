@@ -101,7 +101,7 @@ class CustomProgressBar(private val view: CustomView,
     private val arrowBlackStrokePaint = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.STROKE
-        strokeWidth = 6.5f
+        strokeWidth = 10.5f // 4.5f white outline + 2 * 3.0f black outlines (3px black border)
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
         color = Color.BLACK
@@ -643,8 +643,8 @@ class CustomProgressBar(private val view: CustomView,
         val hHalf = fullHeadHeight / 2f
         val path = Path()
 
-        // Tuck base 6px inside the 30s square so it emerges seamlessly from behind it:
-        val tuck = 6f
+        // Tuck base 10px inside the 30s square so it emerges seamlessly from behind it:
+        val tuck = 10f
         val baseStartX = if (pointsRight) anchorX - tuck else anchorX + tuck
 
         if (actualLen < fullHeadWidth) {
