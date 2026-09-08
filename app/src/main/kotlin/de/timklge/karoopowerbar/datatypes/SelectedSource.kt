@@ -8,6 +8,7 @@ enum class SelectedSource(val id: String, val labelResId: Int) {
     POWER("power", R.string.source_power),
     POWER_3S("power_3s", R.string.source_power_3s),
     POWER_10S("power_10s", R.string.source_power_10s),
+    POWER_30S("power_30s", R.string.source_power_30s),
     SPEED("speed", R.string.source_speed),
     SPEED_3S("speed_3s", R.string.source_speed_3s),
     CADENCE("cadence", R.string.source_cadence),
@@ -28,5 +29,5 @@ enum class SelectedSource(val id: String, val labelResId: Int) {
     FLIGHT_ATTENDANT_SUSPENSION_STATE_FRONT("flight_attendant_suspension_state_front", R.string.source_flight_attendant_suspension_state_front),
     FLIGHT_ATTENDANT_SUSPENSION_MODE("flight_attendant_suspension_mode", R.string.source_flight_attendant_suspension_mode);
 
-    fun isPower() = this == POWER || this == POWER_3S || this == POWER_10S
+    fun isPower() = this == POWER || this == POWER_3S || this == POWER_10S || this == POWER_30S
 }

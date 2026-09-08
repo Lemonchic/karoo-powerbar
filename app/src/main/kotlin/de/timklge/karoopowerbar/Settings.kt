@@ -42,6 +42,9 @@ data class PowerbarSettings(
     val barSize: CustomProgressBarSize = CustomProgressBarSize.MEDIUM,
     val barFontSize: CustomProgressBarFontSize = CustomProgressBarFontSize.fromSize(barSize),
     val barBarSize: CustomProgressBarBarSize = CustomProgressBarBarSize.fromSize(barSize),
+    val splitBarSizes: Boolean = false,
+    val topBarBarSize: CustomProgressBarBarSize = CustomProgressBarBarSize.fromSize(barSize),
+    val bottomBarBarSize: CustomProgressBarBarSize = CustomProgressBarBarSize.fromSize(barSize),
 
     val minCadence: Int = defaultMinCadence, val maxCadence: Int = defaultMaxCadence,
     val minSpeed: Float = defaultMinSpeedMs, val maxSpeed: Float = defaultMaxSpeedMs, // 50 km/h in m/s

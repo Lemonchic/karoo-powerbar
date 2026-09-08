@@ -54,8 +54,9 @@ class ForegroundService : Service() {
 
                     if (showBars){
                         if (settings.bottomBarSource != SelectedSource.NONE || settings.bottomBarLeftSource != SelectedSource.NONE || settings.bottomBarRightSource != SelectedSource.NONE) {
+                            val bottomSize = if (settings.splitBarSizes) settings.bottomBarBarSize else settings.barBarSize
                             Window(this@ForegroundService, PowerbarLocation.BOTTOM, settings.showLabelOnBars,
-                                settings.barBarSize, settings.barFontSize,
+                                bottomSize, settings.barFontSize,
                                 settings.splitBottomBar, settings.stickToEdge, settings.bottomBarSource, settings.bottomBarLeftSource, settings.bottomBarRightSource).apply {
                                     windows.add(this)
                                     open()
@@ -63,8 +64,9 @@ class ForegroundService : Service() {
                         }
 
                         if (settings.topBarSource != SelectedSource.NONE || settings.topBarLeftSource != SelectedSource.NONE || settings.topBarRightSource != SelectedSource.NONE) {
+                            val topSize = if (settings.splitBarSizes) settings.topBarBarSize else settings.barBarSize
                             Window(this@ForegroundService, PowerbarLocation.TOP, settings.showLabelOnBars,
-                                settings.barBarSize, settings.barFontSize,
+                                topSize, settings.barFontSize,
                                 settings.splitTopBar, settings.stickToEdge, settings.topBarSource, settings.topBarLeftSource, settings.topBarRightSource).apply {
                                     open()
                                     windows.add(this)

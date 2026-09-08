@@ -5,6 +5,7 @@ import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
@@ -13,6 +14,7 @@ import android.view.View
 import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
 import de.timklge.karoopowerbar.datatypes.SelectedSource
+import kotlin.math.absoluteValue
 
 class CustomView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -48,6 +50,7 @@ class CustomProgressBar(private val view: CustomView,
         }
     @ColorInt var progressColor: Int = 0xFF2b86e6.toInt()
     var drawMode: ProgressBarDrawMode = ProgressBarDrawMode.STANDARD
+    var powerDelta: Double? = null
 
     var fontSize = CustomProgressBarFontSize.MEDIUM
         set(value) {
@@ -63,14 +66,44 @@ class CustomProgressBar(private val view: CustomView,
                 CustomProgressBarBarSize.NONE, CustomProgressBarBarSize.SMALL -> 3f
                 CustomProgressBarBarSize.MEDIUM -> 6f
                 CustomProgressBarBarSize.LARGE -> 8f
+                CustomProgressBarBarSize.EXTRA_LARGE -> 10f
             }
             targetIndicatorPaint.strokeWidth = when(value){
                 CustomProgressBarBarSize.NONE, CustomProgressBarBarSize.SMALL -> 6f
                 CustomProgressBarBarSize.MEDIUM -> 8f
                 CustomProgressBarBarSize.LARGE -> 10f
+                CustomProgressBarBarSize.EXTRA_LARGE -> 12f
             }
             view.invalidate() // Redraw to apply new bar size
         }
+
+    private val arrowPaint = Paint().apply {
+        isAntiAlias = true
+        style = Paint.Style.FILL
+    }
+
+    private val arrowBlurPaint = Paint().apply {
+        isAntiAlias = true
+        style = Paint.Style.FILL
+        maskFilter = BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL)
+    }
+
+    private val arrowStrokePaint = Paint().apply {
+        isAntiAlias = true
+        style = Paint.Style.STROKE
+        strokeWidth = 3.5f
+        strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
+        color = Color.BLACK
+    }
+
+    private val arrowCorePaint = Paint().apply {
+        isAntiAlias = true
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeWidth = 3f
+        color = Color.argb(220, 255, 255, 255)
+    }
 
     private val targetColor = 0xFF9933FF.toInt()
 
@@ -372,6 +405,10 @@ class CustomProgressBar(private val view: CustomView,
                             finalTextBoxBottom = finalTextBaselineY + fm.descent
                         }
 
+                        if (source == SelectedSource.POWER_30S && powerDelta != null) {
+                            drawDeltaArrow(canvas, x, r, finalTextBoxTop, finalTextBoxBottom, backgroundLeft, backgroundRight)
+                        }
+
                         canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 2f, 2f, textBackgroundPaint)
                         canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 2f, 2f, blurPaint)
                         canvas.drawRoundRect(x, finalTextBoxTop, r, finalTextBoxBottom, 2f, 2f, lineStrokePaint)
@@ -506,6 +543,10 @@ class CustomProgressBar(private val view: CustomView,
                             bBox = textDrawBaselineY + textPaint.descent()
                         }
 
+                        if (source == SelectedSource.POWER_30S && powerDelta != null) {
+                            drawDeltaArrow(canvas, x, r, yBox, bBox, backgroundLeft, backgroundRight)
+                        }
+
                         canvas.drawRoundRect(x, yBox, r, bBox, 2f, 2f, textBackgroundPaint)
                         canvas.drawRoundRect(x, yBox, r, bBox, 2f, 2f, blurPaint)
                         canvas.drawRoundRect(x, yBox, r, bBox, 2f, 2f, lineStrokePaint)
@@ -514,6 +555,105 @@ class CustomProgressBar(private val view: CustomView,
                 }
             }
         }
+    }
+
+    private fun drawDeltaArrow(
+        canvas: Canvas,
+        boxLeft: Float,
+        boxRight: Float,
+        boxTop: Float,
+        boxBottom: Float,
+        backgroundLeft: Float,
+        backgroundRight: Float
+    ) {
+        val delta = powerDelta ?: return
+        val absDelta = delta.absoluteValue
+        if (absDelta < 2.0) return // Deadband to prevent twitching around 0 delta
+
+        // Direction:
+        // When power is surging (delta > 0), arrow points in the direction the bar advances.
+        // For standard left-to-right bar (FULL or LEFT): right is advancing.
+        // For RIGHT horizontal location (right-to-left): left is advancing.
+        val pointsForward = delta > 0
+        val pointsRight = when (horizontalLocation) {
+            HorizontalPowerbarLocation.RIGHT -> !pointsForward
+            else -> pointsForward
+        }
+
+        // Dynamic Length & Size scaling:
+        // absDelta ranges from 2W to 50W+
+        val ratio = ((absDelta - 2.0) / 48.0).coerceIn(0.0, 1.0).toFloat()
+
+        // Generous vertical sizing for high visibility on bike computer:
+        val headHeight = (barSize.barHeight * 1.5f).coerceIn(28f, 56f)
+        val shaftHeight = (headHeight * 0.48f).coerceIn(12f, 26f)
+        val headWidth = (headHeight * 0.75f).coerceIn(20f, 40f)
+
+        // Arrow length extends prominently from the value box:
+        val baseLength = headWidth + 18f
+        val maxExtra = 65f
+        val desiredLength = baseLength + ratio * maxExtra
+
+        // High-contrast, high-visibility neon colors:
+        // Surging (delta > 0): neon lime #76FF03 -> brilliant electric spring green #00FF66
+        // Dropping (delta < 0): vivid flame orange #FF6D00 -> intense neon red/crimson #FF0055
+        val arrowColor = if (delta > 0) {
+            ColorUtils.blendARGB(0xFF76FF03.toInt(), 0xFF00FF66.toInt(), ratio)
+        } else {
+            ColorUtils.blendARGB(0xFFFF6D00.toInt(), 0xFFFF0055.toInt(), ratio)
+        }
+
+        arrowPaint.color = arrowColor
+        arrowBlurPaint.color = arrowColor
+
+        val centerY = (boxTop + boxBottom) / 2f
+        val anchorX = if (pointsRight) boxRight - 1f else boxLeft + 1f
+
+        // Constrain tip within screen bounds:
+        val tipX = if (pointsRight) {
+            (anchorX + desiredLength).coerceIn(anchorX + headWidth + 4f, backgroundRight)
+        } else {
+            (anchorX - desiredLength).coerceIn(backgroundLeft, anchorX - headWidth - 4f)
+        }
+
+        val actualLen = (tipX - anchorX).absoluteValue
+        if (actualLen < headWidth + 4f) return
+
+        val sHalf = shaftHeight / 2f
+        val hHalf = headHeight / 2f
+        val path = Path()
+
+        if (pointsRight) {
+            val neckX = (tipX - headWidth).coerceAtLeast(anchorX + 4f)
+            path.moveTo(anchorX, centerY - sHalf)
+            path.lineTo(neckX, centerY - sHalf)
+            path.lineTo(neckX, centerY - hHalf)
+            path.lineTo(tipX, centerY)
+            path.lineTo(neckX, centerY + hHalf)
+            path.lineTo(neckX, centerY + sHalf)
+            path.lineTo(anchorX, centerY + sHalf)
+            path.close()
+        } else {
+            val neckX = (tipX + headWidth).coerceAtMost(anchorX - 4f)
+            path.moveTo(anchorX, centerY - sHalf)
+            path.lineTo(neckX, centerY - sHalf)
+            path.lineTo(neckX, centerY - hHalf)
+            path.lineTo(tipX, centerY)
+            path.lineTo(neckX, centerY + hHalf)
+            path.lineTo(neckX, centerY + sHalf)
+            path.lineTo(anchorX, centerY + sHalf)
+            path.close()
+        }
+
+        // Layer 1: Ambient neon glow
+        canvas.drawPath(path, arrowBlurPaint)
+        // Layer 2: Vivid neon solid fill
+        canvas.drawPath(path, arrowPaint)
+        // Layer 3: Bold dark outline for maximum contrast against all backgrounds
+        canvas.drawPath(path, arrowStrokePaint)
+        // Layer 4: Bright luminous core line for instant daylight visibility
+        val coreEndX = if (pointsRight) tipX - 6f else tipX + 6f
+        canvas.drawLine(anchorX, centerY, coreEndX, centerY, arrowCorePaint)
     }
 
     fun invalidate() {

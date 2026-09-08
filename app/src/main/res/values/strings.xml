@@ -43,6 +43,7 @@
     <string name="source_power">Power</string>
     <string name="source_power_3s">Power (3 sec Ø)</string>
     <string name="source_power_10s">Power (10 sec Ø)</string>
+    <string name="source_power_30s">Power (30 sec Ø)</string>
     <string name="source_speed">Speed</string>
     <string name="source_speed_3s">Speed (3 sec Ø)</string>
     <string name="source_cadence">Cadence</string>
@@ -82,6 +83,10 @@
     <string name="size_small">Small</string>
     <string name="size_medium">Medium</string>
     <string name="size_large">Large</string>
+    <string name="size_extra_large">Extra Large</string>
+    <string name="split_bar_sizes">Split bar sizes</string>
+    <string name="top_bar_size">Top Bar Size</string>
+    <string name="bottom_bar_size">Bottom Bar Size</string>
 
     <string name="source_flight_attendant_suspension_mode">Flight Attendant Mode</string>
     <string name="source_flight_attendant_suspension_state_front">Flight Attendant Fork Position</string>

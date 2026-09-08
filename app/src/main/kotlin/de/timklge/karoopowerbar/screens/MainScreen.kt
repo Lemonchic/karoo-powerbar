@@ -148,6 +148,9 @@ fun MainScreen(onFinish: () -> Unit) {
     var colorBasedOnZones by remember { mutableStateOf(false) }
     var showLabelOnBars by remember { mutableStateOf(true) }
     var barBarSize by remember { mutableStateOf(CustomProgressBarBarSize.MEDIUM) }
+    var splitBarSizes by remember { mutableStateOf(false) }
+    var topBarBarSize by remember { mutableStateOf(CustomProgressBarBarSize.MEDIUM) }
+    var bottomBarBarSize by remember { mutableStateOf(CustomProgressBarBarSize.MEDIUM) }
     var barFontSize by remember { mutableStateOf(CustomProgressBarFontSize.MEDIUM) }
     var stickToEdge by remember { mutableStateOf(false) }
 
@@ -203,6 +206,9 @@ fun MainScreen(onFinish: () -> Unit) {
             minPedalSmoothness = minPedalSmoothness.toFloatOrNull() ?: PowerbarSettings.defaultMinPedalSmoothnessPercent,
             maxPedalSmoothness = maxPedalSmoothness.toFloatOrNull() ?: PowerbarSettings.defaultMaxPedalSmoothnessPercent,
             barBarSize = barBarSize,
+            splitBarSizes = splitBarSizes,
+            topBarBarSize = topBarBarSize,
+            bottomBarBarSize = bottomBarBarSize,
             barFontSize = barFontSize,
             useCustomPowerRange = useCustomPowerRange,
             useCustomHrRange = useCustomHrRange,
@@ -254,6 +260,9 @@ fun MainScreen(onFinish: () -> Unit) {
                 showLabelOnBars = settings.showLabelOnBars
                 colorBasedOnZones = settings.useZoneColors
                 barBarSize = settings.barBarSize
+                splitBarSizes = settings.splitBarSizes
+                topBarBarSize = settings.topBarBarSize
+                bottomBarBarSize = settings.bottomBarBarSize
                 barFontSize = settings.barFontSize
                 stickToEdge = settings.stickToEdge
                 minCadence = settings.minCadence.toString()
@@ -466,14 +475,47 @@ fun MainScreen(onFinish: () -> Unit) {
                     })
                 }
 
-                apply {
-                    val dropdownOptions = CustomProgressBarBarSize.entries.toList().map { unit -> DropdownOption(unit.id, stringResource(unit.labelResId)) }
-                    val dropdownInitialSelection by remember(barBarSize) {
-                        mutableStateOf(dropdownOptions.find { option -> option.id == barBarSize.id }!!)
-                    }
-                    Dropdown(label = stringResource(R.string.bar_size), options = dropdownOptions, selected = dropdownInitialSelection) { selectedOption ->
-                        barBarSize = CustomProgressBarBarSize.entries.find { unit -> unit.id == selectedOption.id }!!
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp)) {
+                    Text(stringResource(R.string.split_bar_sizes))
+                    Spacer(modifier = Modifier.weight(1f))
+                    Switch(checked = splitBarSizes, onCheckedChange = {
+                        splitBarSizes = it
                         coroutineScope.launch { updateSettings() }
+                    })
+                }
+
+                if (splitBarSizes) {
+                    apply {
+                        val dropdownOptions = CustomProgressBarBarSize.entries.toList().map { unit -> DropdownOption(unit.id, stringResource(unit.labelResId)) }
+                        val dropdownInitialSelection by remember(topBarBarSize) {
+                            mutableStateOf(dropdownOptions.find { option -> option.id == topBarBarSize.id }!!)
+                        }
+                        Dropdown(label = stringResource(R.string.top_bar_size), options = dropdownOptions, selected = dropdownInitialSelection) { selectedOption ->
+                            topBarBarSize = CustomProgressBarBarSize.entries.find { unit -> unit.id == selectedOption.id }!!
+                            coroutineScope.launch { updateSettings() }
+                        }
+                    }
+
+                    apply {
+                        val dropdownOptions = CustomProgressBarBarSize.entries.toList().map { unit -> DropdownOption(unit.id, stringResource(unit.labelResId)) }
+                        val dropdownInitialSelection by remember(bottomBarBarSize) {
+                            mutableStateOf(dropdownOptions.find { option -> option.id == bottomBarBarSize.id }!!)
+                        }
+                        Dropdown(label = stringResource(R.string.bottom_bar_size), options = dropdownOptions, selected = dropdownInitialSelection) { selectedOption ->
+                            bottomBarBarSize = CustomProgressBarBarSize.entries.find { unit -> unit.id == selectedOption.id }!!
+                            coroutineScope.launch { updateSettings() }
+                        }
+                    }
+                } else {
+                    apply {
+                        val dropdownOptions = CustomProgressBarBarSize.entries.toList().map { unit -> DropdownOption(unit.id, stringResource(unit.labelResId)) }
+                        val dropdownInitialSelection by remember(barBarSize) {
+                            mutableStateOf(dropdownOptions.find { option -> option.id == barBarSize.id }!!)
+                        }
+                        Dropdown(label = stringResource(R.string.bar_size), options = dropdownOptions, selected = dropdownInitialSelection) { selectedOption ->
+                            barBarSize = CustomProgressBarBarSize.entries.find { unit -> unit.id == selectedOption.id }!!
+                            coroutineScope.launch { updateSettings() }
+                        }
                     }
                 }
 

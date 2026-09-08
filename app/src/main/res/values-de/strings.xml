@@ -43,6 +43,7 @@
     <string name="source_power">Leistung</string>
     <string name="source_power_3s">Leistung (3 Sek. Ø)</string>
     <string name="source_power_10s">Leistung (10 Sek. Ø)</string>
+    <string name="source_power_30s">Leistung (30 Sek. Ø)</string>
     <string name="source_speed">Geschwindigkeit</string>
     <string name="source_speed_3s">Geschwindigkeit (3 Sek. Ø)</string>
     <string name="source_cadence">Trittfrequenz</string>
@@ -82,6 +83,10 @@
     <string name="size_small">Klein</string>
     <string name="size_medium">Mittel</string>
     <string name="size_large">Groß</string>
+    <string name="size_extra_large">Sehr groß</string>
+    <string name="split_bar_sizes">Getrennte Balkengrößen</string>
+    <string name="top_bar_size">Balkengröße Oben</string>
+    <string name="bottom_bar_size">Balkengröße Unten</string>
 
     <string name="source_flight_attendant_suspension_mode">Flight Attendant Modus</string>
     <string name="source_flight_attendant_suspension_state_front">Flight Attendant Gabel Position</string>

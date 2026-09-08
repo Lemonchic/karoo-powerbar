@@ -40,6 +40,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -189,6 +190,7 @@ class Window(
                     SelectedSource.POWER -> streamPower(SelectedSource.POWER, PowerStreamSmoothing.RAW)
                     SelectedSource.POWER_3S -> streamPower(SelectedSource.POWER_3S, PowerStreamSmoothing.SMOOTHED_3S)
                     SelectedSource.POWER_10S -> streamPower(SelectedSource.POWER_10S, PowerStreamSmoothing.SMOOTHED_10S)
+                    SelectedSource.POWER_30S -> streamPower(SelectedSource.POWER_30S, PowerStreamSmoothing.SMOOTHED_30S)
                     SelectedSource.HEART_RATE -> streamHeartrate()
                     SelectedSource.SPEED -> streamSpeed(SelectedSource.SPEED, false)
                     SelectedSource.SPEED_3S -> streamSpeed(SelectedSource.SPEED_3S, true)
@@ -802,15 +804,33 @@ class Window(
             .map { (it as? StreamState.Streaming)?.dataPoint }
             .distinctUntilChanged()
 
-        data class StreamData(val userProfile: UserProfile, val value: Double?, val settings: PowerbarSettings? = null, val powerTarget: DataPoint? = null)
+        val power5sFlow = if (source == SelectedSource.POWER_30S) {
+            karooSystem.streamDataFlow(DataType.Type.SMOOTHED_5S_AVERAGE_POWER)
+                .map { (it as? StreamState.Streaming)?.dataPoint?.singleValue }
+                .distinctUntilChanged()
+        } else {
+            flowOf(null)
+        }
 
-        combine(karooSystem.streamUserProfile(), powerFlow, settingsFlow, powerTargetFlow) { userProfile, hr, settings, powerTarget ->
-            StreamData(userProfile, hr, settings, powerTarget)
+        data class StreamData(
+            val userProfile: UserProfile,
+            val value: Double?,
+            val settings: PowerbarSettings? = null,
+            val powerTarget: DataPoint? = null,
+            val power5s: Double? = null
+        )
+
+        combine(karooSystem.streamUserProfile(), powerFlow, settingsFlow, powerTargetFlow, power5sFlow) { userProfile, hr, settings, powerTarget, power5s ->
+            StreamData(userProfile, hr, settings, powerTarget, power5s)
         }.distinctUntilChanged().throttle(1_000).collect { streamData ->
             val value = streamData.value?.roundToInt()
             val powerbarsWithPowerSource = powerbars.values.filter { it.source == source }
+            val delta = if (source == SelectedSource.POWER_30S && streamData.value != null && streamData.power5s != null) {
+                streamData.power5s - streamData.value
+            } else null
 
             powerbarsWithPowerSource.forEach { powerbar ->
+                powerbar.powerDelta = delta
                 if (value != null) {
                     val customMinPower = if (streamData.settings?.useCustomPowerRange == true) streamData.settings.minPower else null
                     val customMaxPower = if (streamData.settings?.useCustomPowerRange == true) streamData.settings.maxPower else null
@@ -828,9 +848,10 @@ class Window(
                         context.getColor(R.color.zone0)
                     }
                     powerbar.progress = progress
+
                     powerbar.label = "${value}W"
 
-                    Log.d(TAG, "Power: $value min: $minPower max: $maxPower")
+                    Log.d(TAG, "Power: $value (delta: $delta) min: $minPower max: $maxPower")
                 } else {
                     powerbar.progressColor = context.getColor(R.color.zone0)
                     powerbar.progress = null

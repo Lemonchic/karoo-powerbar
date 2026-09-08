@@ -16,7 +16,7 @@ android {
         applicationId = "de.timklge.karoopowerbar"
         minSdk = 26
         targetSdk = 33
-        versionCode = 100 + (System.getenv("BUILD_NUMBER")?.toInt() ?: 1)
+        versionCode = 300 + (System.getenv("BUILD_NUMBER")?.toInt() ?: 1)
         versionName = System.getenv("RELEASE_VERSION") ?: "1.0"
     }
 
