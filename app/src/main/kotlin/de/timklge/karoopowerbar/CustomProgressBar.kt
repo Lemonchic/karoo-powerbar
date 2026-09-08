@@ -92,10 +92,10 @@ class CustomProgressBar(private val view: CustomView,
     private val arrowStrokePaint = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.STROKE
-        strokeWidth = 2.5f
+        strokeWidth = 4.5f
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
-        color = Color.BLACK
+        color = Color.WHITE
     }
 
     private val targetColor = 0xFF9933FF.toInt()
@@ -585,9 +585,9 @@ class CustomProgressBar(private val view: CustomView,
         val shaftHeight = (fullHeadHeight * 0.46f).coerceIn(15f, 30f)
         val fullHeadWidth = (fullHeadHeight * 0.72f).coerceIn(24f, 48f)
 
-        // Non-linear scale: slightly bigger at low deltas, slightly smaller at high deltas:
-        val scaledRatio = ratio.toDouble().pow(0.78).toFloat()
-        val arrowLength = scaledRatio * 400f
+        // Non-linear scale: slightly more pronounced curve (pow 0.68) - bigger at low deltas, smoothly compressed at high deltas:
+        val scaledRatio = ratio.toDouble().pow(0.68).toFloat()
+        val arrowLength = scaledRatio * 380f
         if (arrowLength < 1.0f) return
 
         // Arrow color uses the same colour scheme as 30s square relatively to its power:
@@ -601,12 +601,12 @@ class CustomProgressBar(private val view: CustomView,
         val tipX: Float
         val actualLen: Float
         if (pointsRight) {
-            val maxRight = backgroundRight - 2f
+            val maxRight = backgroundRight - 4f
             if (anchorX >= maxRight - 1.5f) return
             tipX = (anchorX + arrowLength).coerceAtMost(maxRight)
             actualLen = tipX - anchorX
         } else {
-            val minLeft = backgroundLeft + 2f
+            val minLeft = backgroundLeft + 4f
             if (anchorX <= minLeft + 1.5f) return
             tipX = (anchorX - arrowLength).coerceAtLeast(minLeft)
             actualLen = anchorX - tipX
