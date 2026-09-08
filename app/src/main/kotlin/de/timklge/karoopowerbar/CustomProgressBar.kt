@@ -587,42 +587,36 @@ class CustomProgressBar(private val view: CustomView,
         val maxExtra = 210f
         val desiredLength = baseLength + ratio * maxExtra
 
-        // Default Power Colour Scheme:
-        // Uses the power zone color of the 5s power, or maps the delta percentage to default power zones:
-        val arrowColor = powerDeltaColor ?: run {
-            val pct = powerDeltaPercent ?: (delta / 250.0)
-            when {
-                pct <= -0.40 -> 0xFF00B988.toInt() // Zone 1 (Active Recovery) - Default Power Green
-                pct <= -0.20 -> 0xFF60EEB2.toInt() // Zone 2 (Endurance) - Default Power Light Green
-                pct <= -0.05 -> 0xFFFFF500.toInt() // Zone 3 (Tempo) - Default Power Yellow
-                pct <= 0.10  -> 0xFFFDC84C.toInt() // Zone 4 (Threshold) - Default Power Amber
-                pct <= 0.25  -> 0xFFFB8C65.toInt() // Zone 5 (VO2 Max) - Default Power Light Orange
-                pct <= 0.45  -> 0xFFFE581F.toInt() // Zone 6 (Anaerobic) - Default Power Orange/Red
-                else         -> 0xFFD60404.toInt() // Zone 7 (Neuromuscular) - Default Power Red
-            }
-        }
-
+        // Arrow color uses the same colour scheme as 30s square relatively to its power:
+        val arrowColor = powerDeltaColor ?: progressColor
         arrowPaint.color = arrowColor
 
         val centerY = (boxTop + boxBottom) / 2f
         val anchorX = if (pointsRight) boxRight - 1f else boxLeft + 1f
 
-        // Constrain tip within screen bounds:
+        // Constrain tip safely within screen bounds without throwing empty range exceptions:
         val tipX = if (pointsRight) {
-            (anchorX + desiredLength).coerceIn(anchorX + headWidth + 4f, backgroundRight)
+            val maxAllowed = backgroundRight - 2f
+            val minNeeded = anchorX + 4f
+            if (minNeeded >= maxAllowed) return
+            (anchorX + desiredLength).coerceIn(minNeeded, maxAllowed)
         } else {
-            (anchorX - desiredLength).coerceIn(backgroundLeft, anchorX - headWidth - 4f)
+            val minAllowed = backgroundLeft + 2f
+            val maxNeeded = anchorX - 4f
+            if (minAllowed >= maxNeeded) return
+            (anchorX - desiredLength).coerceIn(minAllowed, maxNeeded)
         }
 
         val actualLen = (tipX - anchorX).absoluteValue
-        if (actualLen < headWidth + 4f) return
+        if (actualLen < 8f) return
 
+        val effectiveHeadWidth = headWidth.coerceAtMost(actualLen * 0.65f)
         val sHalf = shaftHeight / 2f
         val hHalf = headHeight / 2f
         val path = Path()
 
         if (pointsRight) {
-            val neckX = (tipX - headWidth).coerceAtLeast(anchorX + 4f)
+            val neckX = (tipX - effectiveHeadWidth).coerceAtLeast(anchorX + 2f)
             path.moveTo(anchorX, centerY - sHalf)
             path.lineTo(neckX, centerY - sHalf)
             path.lineTo(neckX, centerY - hHalf)
@@ -632,7 +626,7 @@ class CustomProgressBar(private val view: CustomView,
             path.lineTo(anchorX, centerY + sHalf)
             path.close()
         } else {
-            val neckX = (tipX + headWidth).coerceAtMost(anchorX - 4f)
+            val neckX = (tipX + effectiveHeadWidth).coerceAtMost(anchorX - 2f)
             path.moveTo(anchorX, centerY - sHalf)
             path.lineTo(neckX, centerY - sHalf)
             path.lineTo(neckX, centerY - hHalf)
